@@ -42,14 +42,14 @@ class File_Que(object):
         while True:
             name = '_'.join([
                 'job',
-                str(int(time.time())),
+                str(int(time.time()*100)),
                 str(os.getpid()),
                 ])
             name = os.path.join(self.base,name)
             if not os.path.exists(name):
                 break
             print('waiting for new timestamp')
-            time.sleep(1)# could also use longer time to avoid
+            time.sleep(.05)# could also use longer time to avoid
         with open(name,mode = 'w') as fh:
             fh.writelines(what)
 
