@@ -23,14 +23,10 @@ import time
 import collections
 
 
-class File_Que_Exception(Exception):
-    def __init__(self, msg):
-        self.msg = msg
+class FileQueException(Exception):
+    pass
 
-    def __str__(self):
-        return ''.join(['File_Que_Exception: ',self.msg])
-
-class File_Que(object):
+class FileQue(object):
     def __init__(self, basepath):
         self.base = basepath
         self.jobs = None
@@ -98,14 +94,14 @@ class File_Que(object):
         '''returns true if job lockfile present'''
         fn = self._lock_name(job)
         pn = os.path.join(self.base, fn)
-        if os.path.isfile(pn):
-            return True
-        return False
+        return os.path.isfile(pn)
 
     def lock(self, job):
         '''locks 'job' by creating file named job.fn_lck in self.base'''
         if self.is_locked(job):
-            raise File_Que_Exception('Job {} already locked'.format(job.fn))
+            raise FileQueException('can\'t lock job {}, job already locked'.format(job.fn))
+        if job not in self.jobs:
+            raise FileQueException('can\'t lock job {}, job has been deleted'.format(job.fn))
         fn = self._lock_name(job)
         pn = os.path.join(self.base, fn)
         with open(pn, mode = 'w') as fh:
@@ -119,14 +115,17 @@ class File_Que(object):
         if os.path.isfile(pn):
             os.remove(pn)
         else:
-            raise File_Que_Exception('Job {} not locked'.format(job.fn))
+            raise FileQueException('Job {} not locked'.format(job.fn))
 
     def delete_job(self, job):
         '''deletes the job file specified in job.fn'''
         if self.is_locked(job):
-            raise File_Que_Exception('Job {} is locked, can\'t delete locked job'.format(job.fn))
+            raise FileQueException('Job {} is locked, can\'t delete locked job'.format(job.fn))
+        if job not in self.jobs:
+            raise FileQueException('can\'t delete job {}, already deleted'.format(job.fn))
         pn = os.path.join(self.base, job.fn)
         os.remove(pn)
+        self.jobs.remove(job)
 
 
 
